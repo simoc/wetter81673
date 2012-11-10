@@ -240,8 +240,8 @@ void loop()
         /*
          * Get temperature in degrees Celsius, rounded to one decimal place.
          */
-        float temperature = dataValue * 0.004882814;
-        temperature = (temperature - 0.5) * 100;
+        float temperature = dataValue / 10.0;
+        temperature = temperature - 50;
         int t = (int)(temperature * 10);
         httpData += "temperature,";
         httpData += (t / 10);

@@ -19,11 +19,14 @@
 #include <avr/sleep.h>
 #include <avr/power.h>
 
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
 /*
  * Sensor pins.
  */
 #define LIGHT_SENSOR_PIN 0
-#define TEMPERATURE_SENSOR_PIN 1
+#define TEMPERATURE_SENSOR_PIN 11
 #define SLEEP_SENSOR_PIN 2
 
 /*
@@ -31,6 +34,13 @@
  */
 #define RADIO_PIN 12
 #define LED_PIN 13
+
+// Setup a oneWire instance to communicate with any OneWire devices 
+// (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(TEMPERATURE_SENSOR_PIN);
+
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
 
 volatile int f_wdt = 1;
 
@@ -75,6 +85,9 @@ enterSleep(void)
 void
 setup()
 {
+  // Start up the library
+  sensors.begin();
+
   /*** Setup the WDT ***/
 
   /* Clear the reset flag. */
@@ -161,38 +174,6 @@ readVcc()
   return result;
 }
 
-int
-max2(int n1, int n2)
-{
-  return (n1 > n2 ? n1 : n2);
-}
-
-int
-min2(int n1, int n2)
-{
-  return (n1 < n2 ? n1 : n2);
-}
-
-/*
- * Return median of 3 values.
- */
-int
-median3(int n1, int n2, int n3)
-{
-  if (n1 > n2 && n1 > n3)
-  {
-    return (max2(n2, n3));
-  }
-  else if (n1 > n2)
-  {
-    return n1;
-  }
-  else
-  {
-    return min2(n2, n3);
-  }
-}
-
 void
 loop()
 {
@@ -203,23 +184,21 @@ loop()
     {
       /*
        * Send everything two times, as sometimes messages are lost.
-       * Temperature measurements fluctuate a lot, so take median of 3 values.
        */
-      int temperatureReading1 = analogRead(TEMPERATURE_SENSOR_PIN);
       int lightReading = analogRead(LIGHT_SENSOR_PIN);
       transmitData(1, lightReading);
-      int temperatureReading2 = analogRead(TEMPERATURE_SENSOR_PIN);
       delay(50);
-      int temperatureReading3 = analogRead(TEMPERATURE_SENSOR_PIN);
-      int temperatureReading = median3(temperatureReading1, temperatureReading2, temperatureReading3);
-      transmitData(2, temperatureReading);
+      sensors.requestTemperatures();
+      float temperatureReading = sensors.getTempCByIndex(0);
+      int scaledTemperature = (temperatureReading + 50.0) * 10;
+      transmitData(2, scaledTemperature);
       delay(50);
       long vccReading = readVcc();
       transmitData(3, vccReading);
       delay(50);
       transmitData(1, lightReading);
       delay(50);
-      transmitData(2, temperatureReading);
+      transmitData(2, scaledTemperature);
       delay(50);
       transmitData(3, vccReading);
 
