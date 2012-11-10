@@ -161,6 +161,38 @@ readVcc()
   return result;
 }
 
+int
+max2(int n1, int n2)
+{
+  return (n1 > n2 ? n1 : n2);
+}
+
+int
+min2(int n1, int n2)
+{
+  return (n1 < n2 ? n1 : n2);
+}
+
+/*
+ * Return median of 3 values.
+ */
+int
+median3(int n1, int n2, int n3)
+{
+  if (n1 > n2 && n1 > n3)
+  {
+    return (max2(n2, n3));
+  }
+  else if (n1 > n2)
+  {
+    return n1;
+  }
+  else
+  {
+    return min2(n2, n3);
+  }
+}
+
 void
 loop()
 {
@@ -171,11 +203,15 @@ loop()
     {
       /*
        * Send everything two times, as sometimes messages are lost.
+       * Temperature measurements fluctuate a lot, so take median of 3 values.
        */
+      int temperatureReading1 = analogRead(TEMPERATURE_SENSOR_PIN);
       int lightReading = analogRead(LIGHT_SENSOR_PIN);
       transmitData(1, lightReading);
+      int temperatureReading2 = analogRead(TEMPERATURE_SENSOR_PIN);
       delay(50);
-      int temperatureReading = analogRead(TEMPERATURE_SENSOR_PIN);
+      int temperatureReading3 = analogRead(TEMPERATURE_SENSOR_PIN);
+      int temperatureReading = median3(temperatureReading1, temperatureReading2, temperatureReading3);
       transmitData(2, temperatureReading);
       delay(50);
       long vccReading = readVcc();
@@ -199,7 +235,7 @@ loop()
          * Calibrated to approximately one hour with
          * lost time for waking up and transmission included.
          */
-        sleepLimit = 406;
+        sleepLimit = 408;
       }
       else
         sleepLimit = 4;
