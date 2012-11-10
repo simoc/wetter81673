@@ -1,4 +1,6 @@
 /*
+ * Weather sensor and radio transmitter.
+ *
  * Copyright 2012 Simon Chenery
  *
  * This program is free software: you can redistribute it and/or modify
@@ -42,6 +44,9 @@ volatile int sleepCounter = 0;
  */
 volatile int sleepLimit = 1;
 
+/*
+ * Watchdog Interrupt Service. This is executed when watchdog times out.
+ */
 ISR(WDT_vect)
 {
   if (f_wdt == 0)
